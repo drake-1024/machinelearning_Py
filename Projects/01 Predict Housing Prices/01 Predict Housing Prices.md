@@ -213,9 +213,9 @@ best_cv_rmse = np.sqrt(-grid_search.best_score_)
 print("Best Model Training RMSE:", best_train_rmse)
 print("Best Model Cross-validated RMSE:", best_cv_rmse)
 ```
-Best Parameters: {'max_depth': 15, 'min_samples_leaf': 10, 'min_samples_split': 2}
-Best Model Training RMSE: 0.449
-Best Model Cross-validated RMSE: 0.628
+- Best Parameters: {'max_depth': 15, 'min_samples_leaf': 10, 'min_samples_split': 2}
+- Best Model Training RMSE: 0.449
+- Best Model Cross-validated RMSE: 0.628
 
 The model performs well on the training set, but the higher cross-validated RMSE suggests some overfitting. The model might be capturing noise or specific patterns in the training data that do not generalize as well to unseen data. Further steps could include exploring ensemble methods like Random Forest or Gradient Boosting to reduce variance and improve generalization.
 
