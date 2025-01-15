@@ -68,7 +68,7 @@ In this section, we will explore several regression models to identify the most 
 - Decision Tree
 - Random Forest
 
-## Linear Regression Model 1
+## Linear Regression Model
 Before using multiple features to predict `MedHouseVal`, let's begin with a single feature. Based on the correlation data, `MedInc` appears to be a promising attribute. Let's examine the scatterplot between `MedInc` and `MedHouseVal`.
 
 ```
@@ -119,38 +119,51 @@ Since the data is categorized by income, stratified sampling will ensure that bo
 split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
 housing_split = split.split(df, df["income_cat"])
 
-# get training and testing dataset
+# get train and test dataset
 for train_index, test_index in housing_split:
     train_set = df.loc[train_index]
     test_set = df.loc[test_index]
 
-# drop MedHouseVal from training data
-housing_tr = train_set.drop("MedHouseVal", axis=1)
+# drop MedHouseVal from training and testing data
+x_train = train_set.drop("MedHouseVal", axis=1)
+x_test = test_set.drop("MedHouseVal", axis=1)
 
 # create a new dataframe with MedHouseVal
-housing_labels = train_set["MedHouseVal"].copy()
+y_train = train_set["MedHouseVal"].copy()
+y_test = test_set["MedHouseVal"].copy()
+```
+
+We need to scale the features to ensure that all features are on a similar scale. This helps improve the performance of the machine learning model by ensuring that no feature dominates due to its larger range, leading to more balanced and accurate predictions.
+
+```
+scaler = StandardScaler().fit(x_train.iloc[:, :8])
+
+def preprocessor(X):
+    A = X.copy()
+    A.iloc[:, :8] = scaler.transform(A.iloc[:, :8])
+    return A
+
+# Fit the scaler to the data and transform it
+x_train_scaled, x_test_scaled = preprocessor(x_train), preprocessor(x_test)
 ```
 
 ### Model Training and Evaluation
 ```
 # linear regression model for best fit
-lin_reg = LinearRegression()
-lin_reg.fit(housing_tr, housing_labels)
+lm = LinearRegression().fit(x_train_scaled, y_train)
 
 # predict the median_house_value
-predicted_data = lin_reg.predict(housing_tr)
+y_hat = lm.predict(x_train_scaled)
 
 # Compute the RMSE
-lin_rmse = np.sqrt(mean_squared_error(housing_labels, predicted_data))
-print("root mean square error:", lin_rmse)
+lin_rmse = mean_squared_error(y_hat, y_train, squared=False)
+lin_rmse
 ```
-The prediction error is 0.724.
+The RMSE is 0.724.
 
 Next, we can try to apply a linear regression model to predict the `MedHouseVal` using the other features. Hopefully, this gives us a lower prediction error.
 
-## Linear Regression Model 2
-The other features are on different scales, so we need to apply **feature scaling**. **Standardization** is a common method, which adjusts the data to have a mean of 0 and a standard deviation of 1. We can use Scikit-learn's **StandardScaler** to perform this transformation.
-
+## Random Forest Model
 
 
 
