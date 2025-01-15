@@ -65,8 +65,8 @@ The median house value generally increases as the median income rises. Additiona
 # Training Models
 In this section, we will explore several regression models to identify the most promising one based on prediction error. The models we will use are:
 - Linear Regression
-- Decision Tree
 - Random Forest
+- 
 
 ## Linear Regression Model
 Before using multiple features to predict `MedHouseVal`, let's begin with a single feature. Based on the correlation data, `MedInc` appears to be a promising attribute. Let's examine the scatterplot between `MedInc` and `MedHouseVal`.
@@ -98,6 +98,7 @@ df.hist(column='MedInc',
 
 The histogram above shows that most median income values are concentrated between 1.5 and 6.
 
+#### Income Categorization
 To perform stratified sampling based on income, we need to create an income category attribute. We'll divide the income range into five categories (labeled 1 to 5): Category 1 will include incomes from 0 to 1.5 (less than $15,000), Category 2 will cover incomes from 1.5 to 3, and so on.
 
 
@@ -112,6 +113,8 @@ Note: It’s important not to create too many strata, and each stratum should co
 
 Let's predict the `MedHouseVal` using `MedInc` as the feature. First, we'll apply stratified sampling to create training and testing datasets, ensuring that both sets represent the different income categories. Then, we'll use a linear regression model to find the best fit and predict the housing price.
 
+
+#### Stratified Sampling
 Since the data is categorized by income, stratified sampling will ensure that both the training and test sets include samples from each income category.
 
 ```
@@ -133,6 +136,7 @@ y_train = train_set["MedHouseVal"].copy()
 y_test = test_set["MedHouseVal"].copy()
 ```
 
+#### Feature Scaling
 We need to scale the features to ensure that all features are on a similar scale. This helps improve the performance of the machine learning model by ensuring that no feature dominates due to its larger range, leading to more balanced and accurate predictions.
 
 ```
@@ -161,13 +165,61 @@ lin_rmse
 ```
 The RMSE is 0.724.
 
-Next, we can try to apply a linear regression model to predict the `MedHouseVal` using the other features. Hopefully, this gives us a lower prediction error.
+## Decision Tree Model
+
+The Decision Tree model has the ability to capture non-linear relationships. Unlike linear regression, it splits data into subsets, modeling complex patterns effectively. This makes it well-suited for this dataset, where factors like income, house age, and location interact non-linearly.
+
+### Model Training and Evaluation
+```
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import cross_val_score
+
+# Initialize the Decision Tree Regressor
+dt_reg = DecisionTreeRegressor(random_state=42)
+
+# Train the model on the training set
+dt_reg.fit(x_train_scaled, y_train)
+
+# Predict on the training set to evaluate performance
+y_train_pred = dt_reg.predict(x_train_scaled)
+train_rmse = mean_squared_error(y_train, y_train_pred, squared=False)
+train_rmse
+```
+The RMSE of 2.783e-16 essentially zero, which suggests that the model has perfectly fit the training data. This is a classic sign of overfitting, where the model memorizes the training data instead of generalizing from it.
+
+### Fine-tuning Model
+
+To reduce overfitting in the Decision Tree, we’ll limit tree depth and adjust parameters like minimum samples for splits. Hyperparameter tuning with GridSearchCV will find optimal settings.
+
+```
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    'max_depth': [5, 10, 15],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 5, 10]
+}
+
+grid_search = GridSearchCV(DecisionTreeRegressor(random_state=42), param_grid, scoring='neg_mean_squared_error', cv=5)
+grid_search.fit(x_train_scaled, y_train)
+
+best_params = grid_search.best_params_
+best_model = grid_search.best_estimator_
+print("Best Parameters:", best_params)
+
+# Evaluate best model
+best_train_rmse = mean_squared_error(y_train, best_model.predict(x_train_scaled), squared=False)
+best_cv_rmse = np.sqrt(-grid_search.best_score_)
+print("Best Model Training RMSE:", best_train_rmse)
+print("Best Model Cross-validated RMSE:", best_cv_rmse)
+```
+Best Parameters: {'max_depth': 15, 'min_samples_leaf': 10, 'min_samples_split': 2}
+Best Model Training RMSE: 0.449
+Best Model Cross-validated RMSE: 0.628
+
+The model performs well on the training set, but the higher cross-validated RMSE suggests some overfitting. The model might be capturing noise or specific patterns in the training data that do not generalize as well to unseen data. Further steps could include exploring ensemble methods like Random Forest or Gradient Boosting to reduce variance and improve generalization.
 
 ## Random Forest Model
-
-
-
-
 
 
 
