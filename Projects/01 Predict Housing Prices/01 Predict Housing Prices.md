@@ -154,10 +154,10 @@ x_train_scaled, x_test_scaled = preprocessor(x_train), preprocessor(x_test)
 ### Model Training and Evaluation
 ```
 # linear regression model for best fit
-lm = LinearRegression().fit(x_train_scaled, y_train)
+lin_reg = LinearRegression().fit(x_train_scaled, y_train)
 
 # predict the median_house_value
-y_hat = lm.predict(x_train_scaled)
+y_hat = lin_reg.predict(x_train_scaled)
 
 # Compute the RMSE
 lin_rmse = mean_squared_error(y_hat, y_train, squared=False)
@@ -181,8 +181,8 @@ dt_reg = DecisionTreeRegressor(random_state=42)
 dt_reg.fit(x_train_scaled, y_train)
 
 # Predict on the training set to evaluate performance
-y_train_pred = dt_reg.predict(x_train_scaled)
-train_rmse = mean_squared_error(y_train, y_train_pred, squared=False)
+y_hat_train = dt_reg.predict(x_train_scaled)
+train_rmse = mean_squared_error(y_train, y_hat_train, squared=False)
 train_rmse
 ```
 The RMSE of 2.783e-16 essentially zero, which suggests that the model has perfectly fit the training data. This is a classic sign of overfitting, where the model memorizes the training data instead of generalizing from it.
@@ -221,5 +221,62 @@ The model performs well on the training set, but the higher cross-validated RMSE
 
 ## Random Forest Model
 
+By combining multiple Decision Trees into an ensemble, Random Forests reduce overfitting and improve generalization through averaging. This approach can better capture complex relationships. Additionally, Random Forests provide insights into feature importance while being less sensitive to outliers and noise, making them a powerful and reliable choice.
 
 
+### Model Training and Evaluation
+```
+from sklearn.ensemble import RandomForestRegressor
+
+# Initialize the Random Forest Regressor
+rfr_reg = RandomForestRegressor(max_depth=10, random_state=42)
+
+# Train the model on the training set
+rfr_reg.fit(x_train_scaled, y_train)
+
+# Predict on the training set to evaluate performance
+y_hat_train = rfr_reg.predict(x_train_scaled)
+train_rmse = mean_squared_error(y_train, y_hat_train, squared=False)
+train_rmse
+```
+The RMSE is 0.420.
+
+### Fine-tuning Model
+Hyperparameter tuning with GridSearchCV will find optimal settings.
+```
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor
+
+param_grid = [
+    {'n_estimators': [3, 10, 30], 'max_features':[2, 4, 6, 8]}, 
+    {'bootstrap': [False], 'n_estimators': [3, 10], 'max_features':[2, 3, 4]},
+]
+
+grid_search = GridSearchCV(RandomForestRegressor(random_state=42), param_grid, scoring='neg_mean_squared_error', cv=5)
+grid_search.fit(x_train_scaled, y_train)
+
+best_params = grid_search.best_params_
+best_model = grid_search.best_estimator_
+print("Best Parameters:", best_params)
+
+# Evaluate best model
+best_train_rmse = mean_squared_error(y_train, best_model.predict(x_train_scaled), squared=False)
+best_cv_rmse = np.sqrt(-grid_search.best_score_)
+print("Best Model Training RMSE:", best_train_rmse)
+print("Best Model Cross-validated RMSE:", best_cv_rmse)
+```
+- Best Parameters: {'max_features': 8, 'n_estimators': 30}
+- Best Model Training RMSE: 0.200
+- Best Model Cross-validated RMSE: 0.520
+
+# Model Selection
+We select the Random Forest model with the optimal parameters: 8 features and 30 estimators. We consider this as our final model and evaluate its performance on the test set.
+
+# Model Evaluation on Test Set
+```
+y_hat = best_model.predict(x_test_scaled)
+
+test_rmse = mean_squared_error(y_test, y_hat, squared=False)
+print("Test RMSE:", test_rmse)
+```
+The RMSE is 0.502.
